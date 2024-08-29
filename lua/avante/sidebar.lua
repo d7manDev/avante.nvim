@@ -427,7 +427,12 @@ function Sidebar:render_input()
     ---@diagnostic disable-next-line: undefined-global
     icon, _, _ = MiniIcons.get("filetype", filetype)
   else
-    icon = require("nvim-web-devicons").get_icon_by_filetype(filetype, {})
+    local ok, devicons = pcall(require, "nvim-web-devicons")
+    if ok then
+      icon = devicons.get_icon_by_filetype(filetype, {})
+    else
+      icon = ""
+    end
   end
 
   local code_file_fullpath = api.nvim_buf_get_name(self.code.bufnr)
@@ -1003,6 +1008,8 @@ function Sidebar:create_selected_code()
   end
 end
 
+local hint_window = nil
+
 function Sidebar:create_input()
   if self.input then
     self.input:unmount()
@@ -1223,8 +1230,6 @@ function Sidebar:create_input()
     end,
   })
 
-  local hint_window = nil
-
   -- Close the floating window
   local function close_hint()
     if hint_window and api.nvim_win_is_valid(hint_window) then
@@ -1267,8 +1272,6 @@ function Sidebar:create_input()
 
     api.nvim_win_set_hl_ns(hint_window, Highlights.hint_ns)
   end
-
-  show_hint()
 
   api.nvim_create_autocmd({ "TextChanged", "TextChangedI" }, {
     group = self.augroup,

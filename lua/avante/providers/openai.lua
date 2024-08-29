@@ -63,12 +63,12 @@ end
 M.parse_message = function(opts)
   ---@type string | OpenAIMessage[]
   local user_content
-  if Config.behaviour.support_paste_from_clipboard and Clipboard.has_content() then
+  if Config.behaviour.support_paste_from_clipboard and opts.image_path then
     user_content = {}
     table.insert(user_content, {
       type = "image_url",
       image_url = {
-        url = "data:image/png;base64," .. Clipboard.get_base64_content(),
+        url = "data:image/png;base64," .. Clipboard.get_base64_content(opts.image_path),
       },
     })
     table.insert(user_content, { type = "text", text = M.get_user_message(opts) })
@@ -95,7 +95,9 @@ M.parse_response = function(data_stream, _, opts)
       if choice.finish_reason == "stop" then
         opts.on_complete(nil)
       elseif choice.delta.content then
-        opts.on_chunk(choice.delta.content)
+        if choice.delta.content ~= vim.NIL then
+          opts.on_chunk(choice.delta.content)
+        end
       end
     end
   end
