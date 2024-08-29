@@ -59,8 +59,32 @@ M.defaults = {
   },
   ---To add support for custom provider, follow the format below
   ---See https://github.com/yetone/avante.nvim/README.md#custom-providers for more details
-  ---@type {[string]: AvanteProvider}
-  vendors = {},
+  ---@type AvanteProvider
+  groq = {
+    endpoint = "https://api.groq.com/openai/v1/chat/completions",
+    model = "llama-3.1-70b-versatile",
+    api_key_name = "GROQ_API_KEY",
+    parse_curl_args = function(opts, code_opts)
+      return {
+        url = opts.endpoint,
+        headers = {
+          ["Accept"] = "application/json",
+          ["Content-Type"] = "application/json",
+          ["Authorization"] = "Bearer " .. os.getenv(opts.api_key_name),
+        },
+        body = {
+          model = opts.model,
+          messages = require("avante.providers").azure.parse_message(code_opts), -- you can make your own message, but this is very advanced
+          temperature = 0,
+          max_tokens = 4096,
+          stream = true, -- this will be set by default.
+        },
+      }
+    end,
+    parse_response_data = function(data_stream, event_state, opts)
+      require("avante.providers").azure.parse_response(data_stream, event_state, opts)
+    end,
+  },
   ---Specify the behaviour of avante.nvim
   ---1. auto_apply_diff_after_generation: Whether to automatically apply diff after LLM response.
   ---                                     This would simulate similar behaviour to cursor. Default to false.
